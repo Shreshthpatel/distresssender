@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Emergency Distress Trigger</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #ffebee;
+      text-align: center;
+      padding: 30px;
+    }
+    h1 {
+      color: #d50000;
+    }
+    .button {
+      background: #d50000;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      margin: 10px;
+      font-size: 18px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .button:hover {
+      background: #b71c1c;
+    }
+    .toggle, .input-area {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #urgent {
+      transform: scale(1.5);
+      margin-top: 10px;
+    }
+    textarea {
+      width: 90%;
+      max-width: 400px;
+      height: 80px;
+      margin-top: 10px;
+      font-size: 16px;
+      padding: 10px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+    }
+    #countdown {
+      font-size: 20px;
+      font-weight: bold;
+      color: #c62828;
+      margin-top: 20px;
+    }
+    #status {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #2e7d32;
+    }
+    #cancelBtn {
+      background: #888;
+      color: white;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      margin-top: 10px;
+      display: none;
+      cursor: pointer;
+    }
+    #cancelBtn:hover {
+      background: #555;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🚨 Emergency Distress Trigger</h1>
+
+<div id="buttonsContainer">
+  <button class="button" onclick="startCountdown('Accident')">Accident</button>
+  <button class="button" onclick="startCountdown('Sick')">Sick</button>
+  <button class="button" onclick="startCountdown('Conflict')">Conflict</button>
+  <button class="button" onclick="startCountdown('Other')">Other</button>
+</div>
+
+<div class="input-area">
+  <label for="customMessage"><strong>Type your message:</strong></label>
+  <textarea id="customMessage" placeholder="I'm hurt and need urgent help near XYZ location..."></textarea>
+</div>
+
+<div class="toggle">
+  <label for="urgent">Immediate Help Required?</label>
+  <input type="checkbox" id="urgent">
+</div>
+
+
+<button class="button" href="callto:9926541203">Call Mummy</button>
+<button class="button" href="callto:9826624779">Call Papa</button>
+
+<div id="countdown"></div>
+<button id="cancelBtn" onclick="cancelCountdown()">❌ Cancel</button>
+<div id="status"></div>
+
+<script>
+  const botToken = "7559006796:AAHCwfD-pO1T7e7OyLMcyqxxZYD_-taUA5s";
+  const chatIds = ["6192222544", "827169637"];
+
+  let countdownTimer = null;
+  let countdownActive = false;
+  let secondsLeft = 5;
+
+  function startCountdown(reason) {
+    if (countdownActive) return;
+
+    countdownActive = true;
+    secondsLeft = 5;
+    document.getElementById("status").textContent = "";
+    document.getElementById("countdown").textContent = `⏳ Sending "${reason}" alert in ${secondsLeft} seconds...`;
+    document.getElementById("cancelBtn").style.display = "inline-block";
+    disableButtons(true);
+
+    countdownTimer = setInterval(() => {
+      secondsLeft--;
+      if (secondsLeft > 0) {
+        document.getElementById("countdown").textContent = `⏳ Sending "${reason}" alert in ${secondsLeft} seconds...`;
+      } else {
+        clearInterval(countdownTimer);
+        document.getElementById("countdown").textContent = "";
+        document.getElementById("cancelBtn").style.display = "none";
+        countdownActive = false;
+        disableButtons(false);
+        sendAlert(reason);
+      }
+    }, 1000);
+  }
+
+  function cancelCountdown() {
+    clearInterval(countdownTimer);
+    countdownActive = false;
+    document.getElementById("countdown").textContent = "❌ Alert cancelled.";
+    document.getElementById("cancelBtn").style.display = "none";
+    disableButtons(false);
+  }
+
+  function disableButtons(disabled) {
+    const buttons = document.querySelectorAll(".button");
+    buttons.forEach(btn => btn.disabled = disabled);
+  }
+
+  function sendAlert(reason) {
+    const urgent = document.getElementById("urgent").checked ? "Yes" : "No";
+    const customMsg = document.getElementById("customMessage").value.trim() || "(No message)";
+    const status = document.getElementById("status");
+
+    if (!navigator.geolocation) {
+      status.textContent = "❌ Geolocation not supported.";
+      return;
+    }
+
+    status.textContent = "📍 Getting location...";
+
+    navigator.geolocation.getCurrentPosition(position => {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+      const locationLink = `https://maps.google.com/?q=${lat},${lon}`;
+
+      const message = `🚨🚨ALERT🚨🚨
+EMERGENCY DISTRESS HAS BEEN CALLED
+Reason: ${reason}
+Message from sender: ${customMsg}
+Location: ${locationLink}
+Immediate help required: ${urgent}`;
+
+      chatIds.forEach(chatId => {
+        fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: message
+          })
+        }).catch(() => {
+          status.textContent = "❌ Failed to send alert.";
+        });
+      });
+
+      status.textContent = "✅ Alert sent successfully!";
+    }, error => {
+      status.textContent = "❌ Could not fetch location.";
+    });
+  }
+</script>
+
+</body>
+</html>
