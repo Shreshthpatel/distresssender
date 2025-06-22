@@ -96,8 +96,10 @@
 </div>
 
 
-<button class="button" href="tel:9926541203">Call Mummy</button>
-<button class="button" href="tel:9826624779">Call Papa</button>
+<div style="margin-top: 30px;">
+  <button class="button" onclick="callNumber('9926541203')">📞 Call Mummy</button>
+  <button class="button" onclick="callNumber('9826624779')">📞 Call Papa</button>
+</div>
 
 <div id="countdown"></div>
 <button id="cancelBtn" onclick="cancelCountdown()">❌ Cancel</button>
@@ -190,6 +192,12 @@ Immediate help required: ${urgent}`;
     }, error => {
       status.textContent = "❌ Could not fetch location.";
     });
+  }
+</script>
+  <script>
+  function callNumber(number) {
+    // This will prompt the phone's dialer with the given number
+    window.location.href = `tel:${number}`;
   }
 </script>
 
